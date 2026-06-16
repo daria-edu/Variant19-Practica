@@ -1,353 +1,221 @@
 ﻿using System;
 using System.Collections.Generic;
-using WeatherList;
 
-class Program
+namespace InvestmentPortfolioApp
 {
-    private static WeatherLinkedList list = new WeatherLinkedList();
-
-    private const string SaveFile = "weather.json";
-
-    static void Main()
+    internal class Program
     {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-
-        SeedList();
-
-        bool exit = false;
-
-        while (!exit)
+        static void Main(string[] args)
         {
-            PrintMenu();
+            InvestmentLinkedList list = new InvestmentLinkedList();
 
-            Console.Write("\nВаш вибір: ");
-            string? choice = Console.ReadLine();
-
-            try
+            while (true)
             {
-                switch (choice)
+                Console.WriteLine();
+                Console.WriteLine("========== МЕНЮ ==========");
+                Console.WriteLine("1. Додати інвестицію");
+                Console.WriteLine("2. Видалити останню інвестицію");
+                Console.WriteLine("3. Показати список");
+                Console.WriteLine("4. Пошук облігацій");
+                Console.WriteLine("5. Отримати останні N елементів");
+                Console.WriteLine("6. Зберегти у файл");
+                Console.WriteLine("7. Завантажити з файлу");
+                Console.WriteLine("8. Змінити елемент за індексом");
+                Console.WriteLine("9. Обхід списку з кінця");
+                Console.WriteLine("0. Вихід");
+                Console.Write("Ваш вибір: ");
+
+                string choice = Console.ReadLine();
+
+                try
                 {
-                    case "1":
-                        AddFirst();
-                        break;
+                    switch (choice)
+                    {
+                        case "1":
+                            AddInvestment(list);
+                            list.Display();
+                            break;
 
-                    case "2":
-                        AddLast();
-                        break;
+                        case "2":
+                            list.RemoveLast();
+                            Console.WriteLine("Останню інвестицію видалено.");
+                            list.Display();
+                            break;
 
-                    case "3":
-                        Remove();
-                        break;
+                        case "3":
+                            list.Display();
+                            break;
 
-                    case "4":
-                        PrintTable(list);
-                        break;
+                        case "4":
+                            SearchInvestments(list);
+                            break;
 
-                    case "5":
-                        IndexerGet();
-                        break;
+                        case "5":
+                            GetLastNElements(list);
+                            break;
 
-                    case "6":
-                        IndexerSet();
-                        break;
+                        case "6":
+                            Console.Write("Введіть ім'я файлу: ");
+                            string saveFile = Console.ReadLine();
 
-                    case "7":
-                        PrintLength();
-                        break;
+                            list.SaveToFile(saveFile);
 
-                    case "8":
-                        IterateManual();
-                        break;
+                            Console.WriteLine("Дані успішно збережено.");
+                            break;
 
-                    case "9":
-                        SplitList();
-                        break;
+                        case "7":
+                            Console.Write("Введіть ім'я файлу: ");
+                            string loadFile = Console.ReadLine();
 
-                    case "10":
-                        Search();
-                        break;
+                            list.LoadFromFile(loadFile);
 
-                    case "11":
-                        Serialize();
-                        break;
+                            Console.WriteLine("Дані успішно завантажено.");
+                            list.Display();
+                            break;
 
-                    case "12":
-                        Deserialize();
-                        break;
+                        case "8":
+                            ChangeElement(list);
+                            list.Display();
+                            break;
 
-                    case "0":
-                        exit = true;
-                        break;
+                        case "9":
+                            TraverseFromEnd(list);
+                            break;
 
-                    default:
-                        Console.WriteLine("Невірний пункт меню.");
-                        break;
+                        case "0":
+                            return;
+
+                        default:
+                            Console.WriteLine("Невірний вибір.");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Помилка: {ex.Message}");
                 }
             }
-            catch (Exception ex)
+        }
+
+        static void AddInvestment(InvestmentLinkedList list)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Оберіть тип інвестиції:");
+            Console.WriteLine("0 - Акції");
+            Console.WriteLine("1 - Облігації");
+            Console.WriteLine("2 - Нерухомість");
+            Console.WriteLine("3 - Криптовалюта");
+            Console.Write("Ваш вибір: ");
+
+            int typeValue = int.Parse(Console.ReadLine());
+
+            InvestmentType type = (InvestmentType)typeValue;
+
+            Console.Write("Введіть прибутковість (%): ");
+            double returnRate = double.Parse(Console.ReadLine());
+
+            Console.Write("Високий ризик (true/false): ");
+            bool highRisk = bool.Parse(Console.ReadLine());
+
+            InvestmentPortfolio portfolio =
+                new InvestmentPortfolio(
+                    type,
+                    returnRate,
+                    highRisk);
+
+            list.AddMiddle(portfolio);
+
+            Console.WriteLine("Інвестицію успішно додано.");
+        }
+
+        static void SearchInvestments(InvestmentLinkedList list)
+        {
+            List<InvestmentPortfolio> result = list.Search();
+
+            if (result.Count == 0)
             {
-                Console.WriteLine("Помилка: " + ex.Message);
+                Console.WriteLine("Нічого не знайдено.");
+                return;
             }
 
             Console.WriteLine();
-        }
-    }
+            Console.WriteLine("Результати пошуку:");
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine($"{"Тип",-20}{"Прибутковість",-18}{"Ризик"}");
+            Console.WriteLine("--------------------------------------------------");
 
-    static void PrintMenu()
-    {
-        Console.WriteLine("=================================");
-        Console.WriteLine("ДВОЗВ'ЯЗНИЙ СПИСОК ПОГОДИ");
-        Console.WriteLine("=================================");
-        Console.WriteLine("1 - Додати на початок");
-        Console.WriteLine("2 - Додати в кінець");
-        Console.WriteLine("3 - Видалити елемент");
-        Console.WriteLine("4 - Вивести список");
-        Console.WriteLine("5 - Отримати елемент за індексом");
-        Console.WriteLine("6 - Змінити елемент за індексом");
-        Console.WriteLine("7 - Довжина списку");
-        Console.WriteLine("8 - Ручна ітерація");
-        Console.WriteLine("9 - Розбиття списку");
-        Console.WriteLine("10 - Пошук");
-        Console.WriteLine("11 - Зберегти у файл");
-        Console.WriteLine("12 - Завантажити з файлу");
-        Console.WriteLine("0 - Вихід");
-    }
-
-    static void SeedList()
-    {
-        list.AddLast(new WeatherData(WeatherType.Rainy, 12.5, true));
-        list.AddLast(new WeatherData(WeatherType.Sunny, 25.0, false));
-        list.AddLast(new WeatherData(WeatherType.Cloudy, 18.0, false));
-        list.AddLast(new WeatherData(WeatherType.Rainy, 10.0, true));
-    }
-
-    static void AddFirst()
-    {
-        WeatherData data = ReadWeatherData();
-
-        list.AddFirst(data);
-
-        Console.WriteLine("Елемент додано.");
-    }
-
-    static void AddLast()
-    {
-        WeatherData data = ReadWeatherData();
-
-        list.AddLast(data);
-
-        Console.WriteLine("Елемент додано.");
-    }
-
-    static void Remove()
-    {
-        Console.Write("Введіть індекс: ");
-
-        int index = int.Parse(Console.ReadLine()!);
-
-        WeatherData removed = list.RemoveAt(index);
-
-        Console.WriteLine("Видалено:");
-        Console.WriteLine(removed);
-    }
-
-    static void IndexerGet()
-    {
-        Console.Write("Введіть індекс: ");
-
-        int index = int.Parse(Console.ReadLine()!);
-
-        Console.WriteLine(list[index]);
-    }
-
-    static void IndexerSet()
-    {
-        Console.Write("Введіть індекс: ");
-
-        int index = int.Parse(Console.ReadLine()!);
-
-        Console.WriteLine("Введіть нові дані:");
-
-        list[index] = ReadWeatherData();
-
-        Console.WriteLine("Елемент змінено.");
-    }
-
-    static void PrintLength()
-    {
-        Console.WriteLine("Кількість елементів: " + list.Length);
-    }
-
-    static void IterateManual()
-    {
-        WeatherData? current = list.IteratorReset();
-
-        int i = 0;
-
-        while (current != null)
-        {
-            Console.WriteLine(i + ": " + current);
-
-            current = list.IteratorNext();
-
-            i++;
-        }
-    }
-
-    static void SplitList()
-    {
-        Console.Write("Введіть поріг температури: ");
-
-        double threshold = ReadDouble();
-
-        var result = list.SplitByThreshold(threshold);
-
-        WeatherLinkedList below = result.Item1;
-        WeatherLinkedList equal = result.Item2;
-        WeatherLinkedList above = result.Item3;
-
-        Console.WriteLine("\nНижче порога:");
-        PrintTable(below);
-
-        Console.WriteLine("\nДорівнює порогу:");
-        PrintTable(equal);
-
-        Console.WriteLine("\nВище порога:");
-        PrintTable(above);
-    }
-
-    static void Search()
-    {
-        List<WeatherData> result = list.SearchRainyBelow15();
-
-        if (result.Count == 0)
-        {
-            Console.WriteLine("Нічого не знайдено.");
-            return;
-        }
-
-        Console.WriteLine("Знайдені елементи:");
-
-        foreach (WeatherData item in result)
-        {
-            Console.WriteLine(item);
-        }
-    }
-
-    static void Serialize()
-    {
-        list.SerializeToJson(SaveFile);
-
-        Console.WriteLine("Список збережено.");
-    }
-
-    static void Deserialize()
-    {
-        list = WeatherLinkedList.DeserializeFromJson(SaveFile);
-
-        Console.WriteLine("Список завантажено.");
-    }
-
-    static void PrintTable(WeatherLinkedList list)
-    {
-        if (list.Length == 0)
-        {
-            Console.WriteLine("Список порожній.");
-            return;
-        }
-
-        Console.WriteLine();
-        Console.WriteLine("№   Дані");
-
-        int i = 0;
-
-        foreach (WeatherData item in list)
-        {
-            Console.WriteLine(i + "   " + item);
-            i++;
-        }
-    }
-
-    static WeatherData ReadWeatherData()
-    {
-        Console.WriteLine("Типи погоди:");
-
-        foreach (string name in Enum.GetNames(typeof(WeatherType)))
-        {
-            Console.WriteLine(name);
-        }
-
-        WeatherType weatherType;
-
-        while (true)
-        {
-            Console.Write("Введіть тип погоди: ");
-
-            string? input = Console.ReadLine();
-
-            if (Enum.TryParse(input, true, out weatherType))
+            foreach (InvestmentPortfolio item in result)
             {
-                break;
+                Console.WriteLine(
+                    $"{item.InvestmentType,-20}" +
+                    $"{item.ReturnRate,-18}" +
+                    $"{item.HighRisk}");
             }
 
-            Console.WriteLine("Невірний тип погоди.");
+            Console.WriteLine("--------------------------------------------------");
         }
 
-        Console.Write("Введіть температуру: ");
-        double temperature = ReadDouble();
-
-        bool precipitation = ReadBool();
-
-        return new WeatherData(
-            weatherType,
-            temperature,
-            precipitation
-        );
-    }
-
-    static double ReadDouble()
-    {
-        double value;
-
-        while (true)
+        static void GetLastNElements(InvestmentLinkedList list)
         {
-            string? input = Console.ReadLine();
+            Console.Write("Введіть N: ");
 
-            if (double.TryParse(input, out value))
-            {
-                return value;
-            }
+            int n = int.Parse(Console.ReadLine());
 
-            Console.Write("Помилка. Введіть число ще раз: ");
+            InvestmentLinkedList newList =
+                list.GetLastNElements(n);
+
+            Console.WriteLine();
+            Console.WriteLine("Новий список:");
+
+            newList.Display();
         }
-    }
 
-    static bool ReadBool()
-    {
-        while (true)
+        static void ChangeElement(InvestmentLinkedList list)
         {
-            Console.Write("Є опади? (т/н): ");
+            Console.Write("Введіть індекс: ");
+            int index = int.Parse(Console.ReadLine());
 
-            string? answer = Console.ReadLine();
+            Console.WriteLine("Оберіть тип інвестиції:");
+            Console.WriteLine("0 - Акції");
+            Console.WriteLine("1 - Облігації");
+            Console.WriteLine("2 - Нерухомість");
+            Console.WriteLine("3 - Криптовалюта");
+            Console.Write("Ваш вибір: ");
 
-            if (answer == null)
+            int typeValue = int.Parse(Console.ReadLine());
+
+            InvestmentType type = (InvestmentType)typeValue;
+
+            Console.Write("Введіть прибутковість (%): ");
+            double returnRate = double.Parse(Console.ReadLine());
+
+            Console.Write("Високий ризик (true/false): ");
+            bool highRisk = bool.Parse(Console.ReadLine());
+
+            list[index] = new InvestmentPortfolio(
+                type,
+                returnRate,
+                highRisk);
+
+            Console.WriteLine("Елемент успішно змінено.");
+        }
+
+        static void TraverseFromEnd(InvestmentLinkedList list)
+        {
+            InvestmentPortfolio item = list.GetLast();
+
+            Console.WriteLine();
+            Console.WriteLine("Обхід списку з кінця:");
+
+            while (item != null)
             {
-                continue;
+                Console.WriteLine(
+                    $"{item.InvestmentType} | " +
+                    $"{item.ReturnRate} | " +
+                    $"{item.HighRisk}");
+
+                item = list.GetPrevious();
             }
-
-            answer = answer.ToLower();
-
-            if (answer == "т")
-            {
-                return true;
-            }
-
-            if (answer == "н")
-            {
-                return false;
-            }
-
-            Console.WriteLine("Введіть т або н.");
         }
     }
 }
